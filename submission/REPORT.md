@@ -1,7 +1,7 @@
-# Day 09 Lab — Bùi Thị Thường: 2A202603136 - Bùi Thị Thường
+# Báo cáo Day 09 — Bùi Thị Thường:
 
 ## 1. Kết luận trước
-Pipeline đưa ra kết luận **Hold** (mã thoát 10). Lô dữ liệu đầu vào gồm **224 ảnh thô**, qua bước tiếp nhận (intake) đã loại bỏ **21 ảnh** (8 ảnh trùng byte, 3 ảnh trùng gần đúng, 5 ảnh rò rỉ tập test/val, 3 ảnh kích thước nhỏ dưới 250px và 2 ảnh hỏng không đọc được). Nhận **203 ảnh** vào quy trình QC và xuất ra **203 ảnh** tại `submission/export/clean_v1/` (dưới dạng bản nháp để thử nghiệm). 
+Pipeline đưa ra kết luận **Hold** (mã thoát 10). Lô dữ liệu đầu vào gồm **224 ảnh thô**, qua bước tiếp nhận (intake) đã loại bỏ **21 ảnh** (8 ảnh trùng byte, 3 ảnh trùng gần đúng, 5 ảnh rò rỉ tập test/val, 3 ảnh kích thước nhỏ dưới 250px và 2 ảnh hỏng không đọc được). Nhận **203 ảnh** vào quy trình QC và xuất ra **203 ảnh** tại `submission/export/clean_v1/` (dưới dạng bản nháp để thử nghiệm).
 
 Lý do giữ ở trạng thái Hold: Toàn bộ lỗi bắt buộc nghiêm trọng đã được giải quyết triệt để (`n_errors = 0`), tuy nhiên tỷ lệ ảnh còn cảnh báo ngữ nghĩa chưa được người duyệt là **21.67% (44/203 ảnh)**, vượt quá ngưỡng an toàn **10.00%** (`warn_ratio_hold = 0.10`).
 
@@ -45,7 +45,7 @@ Dưới đây là thống kê toàn bộ 228 lỗi/cảnh báo được phát hi
 | `second_opinion.conf` | 0.25 | **0.5** | `POSSIBLE_MISSING`: `0.50 / 1.00` → **`0.57 / 1.00`** (F1: 0.67 → 0.73) | Ngưỡng cảnh báo cho người cần cân đối để hàng đợi không tràn ngân sách 80 ảnh. Mức 0.5 giúp tăng Precision từ 0.50 lên 0.57 (giảm báo động giả từ 8 xuống 6 ca) trong khi vẫn giữ Recall bắt thiếu nhãn đạt 100%. Không tăng lên 0.7–0.8 vì sẽ làm Recall rớt xuống 75%–88%. |
 
 **Điểm calibration có thể đánh lừa:**
-Tập `data/calib/` chỉ có **39 ảnh**, kích thước mẫu rất nhỏ (chẳng hạn lỗi gần trùng `DUP_IMAGE_NEAR` chỉ có đúng 6 ca chèn). Do đó, mỗi bức ảnh đúng/sai làm metric nhảy bước lớn (1 ca tương đương ~16.7% recall). 
+Tập `data/calib/` chỉ có **39 ảnh**, kích thước mẫu rất nhỏ (chẳng hạn lỗi gần trùng `DUP_IMAGE_NEAR` chỉ có đúng 6 ca chèn). Do đó, mỗi bức ảnh đúng/sai làm metric nhảy bước lớn (1 ca tương đương ~16.7% recall).
 Nếu nhìn vào bảng sweep thấy `phash_dist = 16` cho F1 cao nhất (0.91, bắt được 5/6 ca) mà vội chọn 16 thì trên tập `raw` 203 ảnh, khoảng cách Hamming 16 sẽ khiến các bức ảnh có bố cục đường phố tương tự nhau (nhưng góc máy hoặc xe cộ khác nhau) bị phán nhầm là ảnh trùng và bị máy xóa oan. Việc giữ ở mức 8 đảm bảo tính tổng quát và an toàn cao hơn cho dữ liệu thật.
 
 ## 4. Cửa chặn và điều pipeline KHÔNG bắt được
@@ -65,71 +65,81 @@ Nếu nhìn vào bảng sweep thấy `phash_dist = 16` cho F1 cao nhất (0.91, 
 
 ### 5.1 Kết quả số liệu
 
+Đã train bằng **YOLO26n (`yolo26n.pt`)**, **20 epochs**, với **2 seed (0, 1)** cho mỗi biến thể `raw` và `clean` (tổng cộng 4 lần train).
+
+Bảng từ `submission/results/comparison.md`:
+
 | biến thể | #ảnh train | số seed | map50 (TB ± độ lệch) | map50_95 (TB ± độ lệch) | precision (TB ± độ lệch) | recall (TB ± độ lệch) |
 |---|---|---|---|---|---|---|
-| raw | 224 | 2 | 0.7258 ± 0.0002 | 0.5117 ± 0.0038 | 0.7635 ± 0.0612 | 0.6490 ± 0.0281 |
-| clean | 203 | 2 | 0.6947 ± 0.0095 | 0.4822 ± 0.0069 | 0.7263 ± 0.0049 | 0.6191 ± 0.0165 |
+| raw | 224 | 2 | 0.726 ± 0.000 | 0.512 ± 0.004 | 0.764 ± 0.061 | 0.649 ± 0.028 |
+| clean | 203 | 2 | 0.695 ± 0.010 | 0.482 ± 0.007 | 0.726 ± 0.005 | 0.619 ± 0.016 |
 
-Chênh mAP50 (clean − raw) = **-0.031**.
+Chênh mAP50 (clean − raw) = **−0.031**.
 
 ### 5.2 Phân tích
 
-**Câu 1 — Chênh lệch có ý nghĩa thống kê không?**
+**Câu 1 — Chênh `mAP50(clean) − mAP50(raw)` so với độ lệch chuẩn giữa các seed? Kết luận được đến đâu với 2 seed?**
 
-Mức chênh -0.031 lớn hơn 3× độ lệch chuẩn của `clean` (3 × 0.0095 = 0.029), nên về mặt số học có vẻ đáng kể. Tuy nhiên với chỉ **2 seed**, khoảng tin cậy thực sự rất rộng. Seed 0 của `clean` cho mAP50 = 0.688 và seed 1 = 0.701 — dao động 0.013 chỉ từ việc đổi seed — trong khi `raw` chỉ dao động 0.0003. Kết luận: **không thể khẳng định clean tệt hơn raw chỉ từ 2 seed**; cần ít nhất 5 seed để kết luận chắc chắn.
+mAP50 trung bình của raw là **0.7258 (SD 0.0002)** và clean là **0.6947 (SD 0.0095)**. Mức chênh **−0.0311** lớn hơn độ lệch chuẩn quan sát được ở cả hai nhóm; hai lần chạy raw đạt 0.7256/0.7259, còn clean đạt 0.6880/0.7015. Điều này cho thấy clean kém raw trong **cả hai seed đã thử**, nhưng **chỉ 2 seed/biến thể** không đủ để kết luận về ý nghĩa thống kê, độ ổn định qua nhiều seed hay quan hệ nhân quả. Không sử dụng quy tắc `3 × SD` như một kiểm định thống kê. Nên chạy thêm seed, ưu tiên so sánh ghép cặp cùng seed, và giữ nguyên tập test/cấu hình để đánh giá độ tin cậy.
 
-**Câu 2 — `raw` thực sự train trên bao nhiêu ảnh?**
+**Câu 2 — `raw` thật sự train trên bao nhiêu ảnh?**
 
-Mặc dù `raw` gồm 224 ảnh, Ultralytics YOLO tự động loại bỏ ảnh có nhãn hỏng hoặc box tràn trong quá trình `train` (cảnh báo "Ignoring corrupted image/label"). Trong lô `raw` có: 8 dòng `BOX_OUT_OF_IMAGE`, 4 dòng `BOX_ZERO`, 3 dòng `BAD_FORMAT`, 6 dòng `BAD_CLASS_ID` — tổng cộng 21 dòng lỗi trên khoảng 15–18 ảnh. Như vậy **số ảnh `raw` Ultralytics thực sự dùng để train nhỏ hơn 224**, khoảng **206–210 ảnh** — gần sát con số 203 của `clean`. Điều này thu hẹp lợi thế về số lượng ảnh của `raw`.
+Tập raw được chuẩn bị với **224 file ảnh**, nhưng log Ultralytics của **cả seed 0 và seed 1** đều ghi `Using 213 train, 40 val images for fraction=1.0 at imgsz=640`: **213 ảnh thực sự được dùng trong tập train**. Như vậy có **11 ảnh đầu vào không được sử dụng**. Log có cảnh báo ảnh/nhãn hỏng (`ignoring corrupt image/label`), song chưa đủ để quy chính xác cả 11 ảnh cho từng mã lỗi nếu chưa đối chiếu toàn bộ log/cache. Tập clean có **203 ảnh đầu vào và 203 ảnh được dùng train** ở cả hai seed. Do đó, chênh lệch số ảnh train thực tế là **10 ảnh (213 so với 203)**, không phải 21 ảnh như khi so sánh file đầu vào.
 
-**Câu 3 — `raw` có ảnh trùng tập test không? Điểm bị thổi phồng?**
+**Câu 3 — `raw` có ảnh trùng tập test không? Nếu có, điểm bị thổi phồng bao nhiêu và kiểm bằng cách nào?**
 
-Có. Pipeline phát hiện **5 ảnh LEAK_TEST** trong `raw`:
-- `img_0049` ↔ `test/test_033.jpg`
-- `img_0101` ↔ `test/test_039.jpg`
-- `img_0167` ↔ `test/test_044.jpg`
-- `img_0174` ↔ `test/test_085.jpg`
-- `img_0221` ↔ `test/test_009.jpg`
+Có. `submission/reports/02_error_list_v1.csv` ghi nhận **5 lỗi `LEAK_TEST`**:
 
-Khi model `raw` gặp đúng 5 ảnh test đã thấy khi train, nó dự đoán chính xác gần như tuyệt đối. 5/N ảnh test bị rò rỉ sẽ đẩy mAP50 `raw` lên khoảng **+0.02 đến +0.04** so với giá trị thực (tùy kích cỡ tập test N). Điều này giải thích phần lớn chênh lệch -0.031: **mAP50 của `raw` bị thổi phồng do data leakage**, không phải do `clean` thực sự kém hơn.
+| Ảnh raw | Ảnh trùng trong tập test |
+|---|---|
+| `img_0049` | `test/test_033.jpg` |
+| `img_0101` | `test/test_039.jpg` |
+| `img_0167` | `test/test_044.jpg` |
+| `img_0174` | `test/test_085.jpg` |
+| `img_0221` | `test/test_009.jpg` |
 
-**Câu 4 — Lớp nào được lợi nhất từ việc làm sạch?**
+Đây là **nguy cơ data leakage** có thể khiến metric của raw lạc quan. Tuy nhiên, **chưa đo được raw bị thổi phồng bao nhiêu điểm mAP50**: không thể suy ra `+0.02–0.04` từ số ảnh trùng, cũng không thể mặc định cả 5 ảnh đều đã được dùng train sau khi Ultralytics lọc mẫu lỗi. Cần đối chiếu danh sách 213 ảnh train thực tế với 5 ảnh trên. Để định lượng ảnh hưởng, tạo một biến thể `raw_no_leak` chỉ loại các ảnh rò rỉ (giữ nguyên các yếu tố khác), train cùng seed/cấu hình, và đánh giá trên cùng tập test độc lập; so sánh `mAP50(raw) − mAP50(raw_no_leak)`. Với test hiện tại đã có nguy cơ trùng dữ liệu, nên ưu tiên một tập holdout mới không trùng lặp để kiểm chứng khả năng tổng quát hóa. **Chênh lệch −0.0311 giữa clean và raw không thể quy hoàn toàn cho leakage**, vì quá trình QC còn thay đổi nhiều thành phần khác.
 
-Thống kê box sau QC (`class_stats.csv`):
+**Câu 4 — Lớp nào (car/person/truck/bus) được lợi nhất? Giải thích bằng lỗi nhãn trong `02_error_list_v1`.**
 
-| ID lớp | Tên | Số box (clean) | Ghi chú |
-|---|---|---:|---|
-| 0 | car | 100 | — |
-| 1 | person | 574 | lớp đông nhất |
-| 2 | truck | 41 | — |
-| 3 | bus | 30 | lớp hiếm nhất |
+Từ `ap50_per_class` của bốn file JSON, AP50 trung bình theo hai seed là:
 
-Các lỗi `BAD_CLASS_ID` (ID ngoài 0–3, ví dụ ID 93) và `POSSIBLE_WRONG_CLASS` (18 ca) tập trung ở ranh giới ngữ nghĩa `car`/`truck`/`bus`. Sau khi làm sạch, **lớp `truck` (ID 2) và `bus` (ID 3) được lợi nhất**: loại bỏ nhãn sai lớp giúp model học đặc trưng phân biệt xe tải và xe buýt rõ ràng hơn thay vì bị nhiễu bởi nhãn `car` nhầm. Lớp `person` (ID 1) ít thay đổi vì ít bị nhầm lớp nhất.
+| Lớp | Raw seed 0 / 1 | Clean seed 0 / 1 | Raw TB | Clean TB | Clean − Raw |
+|---|---|---|---:|---:|---:|
+| car | 0.7511 / 0.7239 | 0.7282 / 0.7396 | 0.7375 | 0.7339 | **−0.0036** |
+| person | 0.8126 / 0.8315 | 0.8325 / 0.8031 | 0.8221 | 0.8178 | **−0.0043** |
+| truck | 0.6574 / 0.6395 | 0.4813 / 0.5658 | 0.6485 | 0.5236 | **−0.1249** |
+| bus | 0.6811 / 0.7087 | 0.7099 / 0.6975 | 0.6949 | 0.7037 | **+0.0088** |
 
-**Câu 5 — `clean` còn lỗi gì? Hàng đợi có vượt ngân sách không?**
+**Bus là lớp duy nhất tăng AP50 trung bình sau QC** (+0.0088, tương đương +0.88 điểm phần trăm); **truck giảm mạnh nhất** (−0.1249). Không thể kết luận truck được lợi nhất như khi chỉ suy đoán từ thống kê box. Lưu ý: ở seed 0 bus tăng, nhưng ở seed 1 bus lại giảm nhẹ; vì vậy lợi ích trung bình của bus **chưa chứng minh được tính ổn định**.
 
-Sau vòng QC đầy đủ, `clean` vẫn còn các cảnh báo chưa giải quyết trong `07_error_list_v3.csv`:
+`02_error_list_v1.csv` cho thấy các lỗi có khả năng ảnh hưởng chất lượng học: `BAD_CLASS_ID` (6 dòng), `BAD_CLASS_NAME` (2), `POSSIBLE_WRONG_CLASS` (18 cảnh báo), `POSSIBLE_MISSING` (68), `POSSIBLE_FALSE_POS` (29), cùng lỗi box. `class_stats.csv` của clean ghi car 100, person 574, truck 41 và bus 30 box; truck/bus có tương đối ít box nên dễ nhạy với thay đổi dữ liệu. **Đây là cơ chế giải thích khả dĩ, chưa phải bằng chứng nhân quả**: `BAD_CLASS_ID` không cho biết lớp đúng vốn là gì, còn cảnh báo `POSSIBLE_WRONG_CLASS` là nghi vấn từ model, không phải ground truth. Muốn khẳng định lỗi nào làm bus tăng hay truck giảm cần phân nhóm các lỗi theo lớp sau xác nhận của người duyệt và làm ablation/per-class evaluation.
 
-| Mã cảnh báo | Số lượng | Nguyên nhân |
+**Câu 5 — `clean` còn lỗi gì? Hàng đợi có vượt ngân sách không? Đây đã là chặn trên của dữ liệu sạch chưa?**
+
+Theo `07_error_list_v3.csv`, sau QC vẫn còn các cảnh báo:
+
+| Mã cảnh báo | Số lượng | Ý nghĩa |
 |---|---:|---|
-| `POSSIBLE_MISSING` | 26 | Model thấy vật thể nhưng nhãn thiếu, chưa được người duyệt xác nhận |
-| `POSSIBLE_LOOSE_BOX` | 24 | Box vẽ lỏng (IoU < 0.5), chưa được chỉnh tọa độ |
-| `POSSIBLE_FALSE_POS` | 20 | Nhãn thừa, chưa được xóa |
-| `BOX_TINY` | 7 | Box nhỏ hơn 12px, chưa xử lý |
-| `POSSIBLE_WRONG_CLASS` | 4 | Nhãn sai lớp, chưa sửa |
-| `EMPTY_LABEL` | 4 | File nhãn rỗng (ảnh nền hay thiếu nhãn?) |
-| `BOX_HUGE` | 3 | Box bao phủ > 95% ảnh, chưa kiểm tra |
+| `POSSIBLE_MISSING` | 26 | Nghi thiếu nhãn, chưa được người duyệt xác nhận |
+| `POSSIBLE_LOOSE_BOX` | 24 | Nghi box lỏng/lệch |
+| `POSSIBLE_FALSE_POS` | 20 | Nghi box thừa |
+| `BOX_TINY` | 7 | Box quá nhỏ theo ngưỡng guideline |
+| `POSSIBLE_WRONG_CLASS` | 4 | Nghi sai lớp |
+| `EMPTY_LABEL` | 4 | Cần xác nhận ảnh nền hay thiếu nhãn |
+| `BOX_HUGE` | 3 | Box chiếm diện tích quá lớn |
 
-Hàng đợi duyệt có **130 ảnh** nhưng ngân sách chỉ **80 ảnh** — tức là **50 ảnh chưa được duyệt**. Đây chính là nguyên nhân `clean` giữ trạng thái **Hold**: tập dữ liệu chưa thực sự "sạch" hoàn toàn, còn 44/203 ảnh (21.67%) mang cảnh báo chưa giải quyết vượt ngưỡng 10%. Nói đúng ra **`clean` trong thí nghiệm này là "sạch một phần"**, không phải sạch tuyệt đối.
+Hàng đợi có **130 ảnh**, vượt ngân sách review **80 ảnh** nên còn **50 ảnh chưa được duyệt**. Sau review mô phỏng, `08_summary.json` ghi **0 lỗi bắt buộc**, nhưng còn **44/203 ảnh có cảnh báo chưa được duyệt (21.67%)**, vượt ngưỡng Hold 10% ⇒ **quyết định Hold**. Số cảnh báo có thể nhiều hơn số ảnh vì một ảnh có nhiều lỗi.
+
+Vì vậy `clean_v1` chỉ là **dữ liệu được làm sạch một phần**, **không phải dữ liệu sạch tối ưu và không phải chặn trên (upper bound)** của hiệu năng sau QC. Đồng thời, việc review thêm cũng **không bảo đảm** mAP50 tăng; muốn biết phải hoàn tất review, chạy lại gate và train/đánh giá đối chứng.
 
 ### 5.3 Kết luận tổng thể
 
-`clean` không tốt hơn `raw` về mAP50 (chênh -0.031), nhưng **kết quả này bị ảnh hưởng bởi 3 yếu tố nhiễu đồng thời**:
-1. **Data leakage trong `raw`** — 5 ảnh test rò rỉ vào train làm mAP50 `raw` bị thổi phồng ước tính +0.02 đến +0.04.
-2. **`clean` chưa sạch hoàn toàn** — còn 44 ảnh với cảnh báo chưa duyệt (Hold), nên lợi ích thực sự của việc làm sạch bị giảm bớt.
-3. **Chỉ 2 seed** — độ lệch giữa 2 seed của `clean` (0.013) chiếm gần 42% chênh lệch tổng (-0.031), cho thấy mẫu thống kê quá nhỏ.
+Trong 4 lần train (raw/clean × seed 0/1), **raw đạt mAP50 trung bình 0.7258, clean đạt 0.6947**, chênh **−0.0311**. Đây là kết quả thực nghiệm, không nên làm đẹp hay diễn giải thành clean tốt hơn. **Bus** là lớp duy nhất tăng AP50 trung bình (+0.0088), trong khi **truck** giảm mạnh (−0.1249); hai seed chưa đủ để khẳng định hiệu ứng ổn định.
 
-Nếu loại bỏ 5 ảnh LEAK_TEST khỏi `raw` và tăng ngân sách duyệt để đưa `clean` về trạng thái Release (< 10% cảnh báo), dự đoán `clean` sẽ **ngang hoặc tốt hơn `raw`** về mAP50 thực sự.
+Có ba giới hạn cần tách bạch: **(i)** raw chứa 5 ảnh bị gắn cờ `LEAK_TEST` nhưng chưa đo được mức ảnh hưởng thực sự; **(ii)** clean còn 44/203 ảnh chưa được duyệt hết cảnh báo và đang **Hold**; **(iii)** chỉ có 2 seed cho mỗi biến thể. Ngoài ra, raw thực train **213 ảnh**, clean **203 ảnh**, nên khác biệt về quy mô và nội dung dữ liệu cũng có thể ảnh hưởng kết quả.
+
+**Hướng kiểm chứng tiếp:** xác nhận 5 ảnh leak có nằm trong 213 ảnh raw được train hay không; chạy đối chứng `raw_no_leak` với cùng seed/cấu hình; hoàn tất review và gate cho clean; bổ sung seed và so sánh AP theo lớp trên tập test độc lập. **Chưa có đủ bằng chứng để dự đoán clean sẽ ngang hoặc tốt hơn raw sau các bước này.**
 
 ## 6. Quyết định và ghi chú AI
 **(a) Quyết định cuối cùng:**
