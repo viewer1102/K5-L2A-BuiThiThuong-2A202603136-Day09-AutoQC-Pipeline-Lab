@@ -1,0 +1,18 @@
+{
+  "verdict": {
+    "decision": "Hold",
+    "n_errors": 0,
+    "n_warn_images": 44,
+    "n_images": 203,
+    "warn_ratio": 0.2167,
+    "reasons": [
+      "Tỉ lệ ảnh có cảnh báo 21.67% (44/203 ảnh) >= ngưỡng 10.00%"
+    ]
+  },
+  "reviewed": 80,
+  "budget": 80,
+  "seconds": 8.7,
+  "exported": "C:\\Users\\ADMIN\\Documents\\VINAI-Day09\\K5-L2A-BuiThiThuong-2A202603136-Day09-AutoQC-Pipeline-Lab\\submission\\export\\clean_v1",
+  "config_sha1": "3e5d4181bca7c0f6cede8b80efd47009a1ceab33",
+  "review_sim_sha1": "7988ca22827f780a7043a2300490e679a1697154"
+}
